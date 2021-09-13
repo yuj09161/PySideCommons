@@ -504,7 +504,7 @@ class WorkModelBase(InfoModelBase):
     Public functions and its signature:
         def set_result(
             self,
-            results: Sequence[Iterable[bool, str]],
+            results: Sequence[Iterable],
             disable_successed: bool = None
         ) -> None:
             Set results of each selected row.
@@ -545,17 +545,20 @@ class WorkModelBase(InfoModelBase):
 
     def set_result(
         self,
-        results: Sequence[Iterable[bool, str]],
+        results: Sequence[Iterable],
         disable_successed: bool = None
     ) -> None:
         """
         Set result of each selected row.
 
         Args:
-            results (Sequence[Iterable[bool, str]]):
+            results (Sequence[Iterable]):
                 The results, in row order.
-                bool means whether the work is successful,
-                and str is text to display.
+                The Iterable must contain two items.
+                    The type of first is bool,
+                        and it means whether the work is successful.
+                    The type of second is str,
+                        and it is text to display.
             disable_successed (bool, optional):
                 If this is true, successed row is disabled.
                 If not given, it will be followed class's configuration.
