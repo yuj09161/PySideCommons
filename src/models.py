@@ -127,6 +127,8 @@ class CheckModelBase(ModelBase):
     """
     Model that adds an checkbox to start of every row.
 
+    Create direct instance of this method is not recommended.
+
     Adds checkbox to start of every row,
     and provide some checkbox-related functions.
     Create direct instance of this method is not recommended.
@@ -343,6 +345,8 @@ class InfoModelBase(CheckModelBase):
     """
     Subclass of CheckModelBase that contains extra informations.
 
+    Create direct instance of this method is not recommended.
+
     Inherited public properties:
         default_check_state (QCheckState, Writable):
             Default check state when no state passed to function add_data.
@@ -452,6 +456,8 @@ class InfoModelBase(CheckModelBase):
 class WorkModelBase(InfoModelBase):
     """
     Subclass of CheckModelBase that contains extra informations.
+
+    Create direct instance of this method is not recommended.
 
     Inherited public properties:
         default_check_state (QCheckState, Writable):
