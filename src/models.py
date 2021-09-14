@@ -102,11 +102,11 @@ class ModelBase(QStandardItemModel):
         if items_at_last:
             iter(items_at_last)
 
-        self.appendRow(itertools.chain(
-            items_at_first if items_at_first else tuple(),
-            items,
-            items_at_last if items_at_last else tuple()
-        ))
+        self.appendRow([
+            *(items_at_first if items_at_first else tuple()),
+            *items,
+            *(items_at_last if items_at_last else tuple())
+        ])
 
     def del_row(self, k: int) -> None:
         """
@@ -177,28 +177,24 @@ class CheckModelBase(ModelBase):
             Clears all checks.
     """
     _DEFAULT_CHECK_STATE = NotImplemented
+    _SELECT_COL_NAME = '선택'
 
-    def __init__(self, default_check_state: bool = None):
+    def __init__(self, default_check_state: Union[bool, Qt.CheckState]):
         """
         Create an instance of this class.
 
         Args:
-            default_check_state (bool):
+            default_check_state (Union[bool, Qt.CheckState]):
                 Sets the default check state.
-                if not specified,
-                    the _DEFAULT_CHECK_STATE of class will be used.
         """
         super().__init__()
 
-        if default_check_state is None:
-            self._default_check_state = self._DEFAULT_CHECK_STATE
-        else:
-            self.default_check_state = default_check_state
+        self.default_check_state = default_check_state
 
     def _set_header(self) -> None:
-        self.setHorizontalHeaderLabels(
-            itertools.chain(('선택',), getattr(self, '_header', tuple()))
-        )
+        self.setHorizontalHeaderLabels(itertools.chain(
+            (self._SELECT_COL_NAME,), getattr(self, '_header', tuple())
+        ))
 
     def add_data(
         self, data: Iterable[str],
@@ -212,21 +208,25 @@ class CheckModelBase(ModelBase):
         Adds given data(texts) (and additional items(optinal)) to model.
 
         Args:
-            data (Iterable[str]): The texts to display.
+            data (Iterable[str]):
+                The texts to display.
             items_at_first (Iterable[QStandardItem], optional):
                 If given, given items is inserted before the data.
             items_at_last (Iterable[QStandardItem], optional):
                 If given, given items is inserted after the data.
 
-        Keyword args:
+        Keyword Args:
             chk_enabled (bool, optional):
                 Enabled state of checkbox of the row.
                 Defaults to True.
             chk_state (Qt.CheckState, optional):
                 State of checkbox of the row.
-                If not given, the _DEFAULT_CHECK_STATE of class will be used.
+                If not given,
+                    the default_check_state property of class will be used.
         """
         # pylint: disable = arguments-differ
+        if chk_state is None:
+            chk_state = self._default_check_state
 
         chk_item = QStandardItem('')
         chk_item.setEditable(False)
@@ -370,15 +370,6 @@ class InfoModelBase(CheckModelBase):
             Remove given row.
         def clear(self) -> None:
             Remove all rows.
-        def add_data(
-            self, data: Iterable[str],
-            items_at_first: Iterable[QStandardItem] = None,
-            items_at_last: Iterable[QStandardItem] = None,
-            *,
-            chk_enabled: bool = True,
-            chk_state: Qt.CheckState = Qt.Checked
-        ) -> None:
-            Adds a row.
         def del_selected(self) -> List[int]:
             Delete checked row(s).
         def select_all(self) -> None:
@@ -394,25 +385,44 @@ class InfoModelBase(CheckModelBase):
 
     Public functions and its signature:
         def add_data(
-            self, to_display: Iterable[str], infos: Any
+            self, to_display: Iterable[str], infos: Any,
+            items_at_first: Iterable[QStandardItem] = None,
+            items_at_last: Iterable[QStandardItem] = None,
+            *,
+            chk_enabled: bool = True,
+            chk_state: Qt.CheckState = None
         ) -> None:
-            Adds a row.
+            Adds a row with checkbox.
         def del_row(self, k) -> None:
             Remove given row.
         def clear(self) -> None:
             Remove all rows.
     """
 
-    def __init__(self):
+    def __init__(self, default_check_state: Union[bool, Qt.CheckState]):
+        """
+        Create an instance of this class.
+
+        Args:
+            default_check_state (Union[bool, Qt.CheckState]):
+                Sets the default check state.
+        """
         self._count = 0
         self._infos = []
-        super().__init__()
+        super().__init__(default_check_state)
 
     def add_data(
-        self, to_display: Iterable[str], infos: Any
+        self, to_display: Iterable[str], infos: Any,
+        items_at_first: Iterable[QStandardItem] = None,
+        items_at_last: Iterable[QStandardItem] = None,
+        *,
+        chk_enabled: bool = True,
+        chk_state: Qt.CheckState = None
     ) -> None:
         """
-        Adds given data(texts) to model.
+        Adds given data(texts) (and additional items(optinal)) to model.
+
+        Checkbox will be placed at first column.
 
         Args:
             to_display (Iterable[str]):
@@ -420,11 +430,24 @@ class InfoModelBase(CheckModelBase):
             infos (Any):
                 The extra information.
                 Will be used output of info_of_selected property.
+            items_at_first (Iterable[QStandardItem], optional):
+                If given, given items is inserted before the data.
+            items_at_last (Iterable[QStandardItem], optional):
+                If given, given items is inserted after the data.
+
+        Keyword Args:
+            chk_enabled (bool, optional):
+                Enabled state of checkbox of the row.
+                Defaults to True.
+            chk_state (Qt.CheckState, optional):
+                State of checkbox of the row.
+                If not given, the _DEFAULT_CHECK_STATE of class will be used.
         """
         # pylint: disable = arguments-differ
         self._count += 1
         super().add_data(
-            to_display, chk_state=self._DEFAULT_CHECK_STATE
+            to_display, items_at_first, items_at_last,
+            chk_enabled=chk_enabled, chk_state=chk_state
         )
         self._infos.append(infos)
 
@@ -442,7 +465,7 @@ class InfoModelBase(CheckModelBase):
         Args:
             k (int): The row number.
         """
-        self.removeRow(k)
+        super().del_row(k)
         del self._infos[k]
         self._count -= 1
 
@@ -488,10 +511,6 @@ class WorkModelBase(InfoModelBase):
             Uncheck checked row, check unchecked row.
         def clear_selection(self) -> None:
             Clears all checks.
-        def add_data(
-            self, to_display: Iterable[str], infos: Any
-        ) -> None:
-            Adds a row.
         def del_row(self, k) -> None:
             Remove given row.
         def clear(self) -> None:
@@ -502,6 +521,15 @@ class WorkModelBase(InfoModelBase):
             This contains (info_of_selected, StatusBridge of this state.)
 
     Public functions and its signature:
+        def add_data(
+            self, to_display: Iterable[str], infos: Any,
+            items_at_first: Iterable[QStandardItem] = None,
+            items_at_last: Iterable[QStandardItem] = None,
+            *,
+            chk_enabled: bool = True,
+            chk_state: Qt.CheckState = None
+        ) -> None:
+            Adds a row with checkbox and status col.
         def set_result(
             self,
             results: Sequence[Iterable],
@@ -511,18 +539,76 @@ class WorkModelBase(InfoModelBase):
         def del_successed(self) -> None:
             Remove successed work(s).
     """
-    def __init__(self, disable_successed):
+
+    def __init__(
+        self,
+        default_check_state: Union[bool, Qt.CheckState],
+        disable_successed: bool
+    ):
         """
         Create an instance of this class.
+
+        Args:
+            default_check_state (Union[bool, Qt.CheckState]):
+                Sets the default check state.
+            disable_successed (Union[bool, Qt.CheckState]):
+                If true, the checkbox of successed row will be disabled.
         """
-        super().__init__()
-        # self.__successed_row = set()
+        super().__init__(default_check_state)
+        self.__successed_row = set()
         self.__disable_successed = disable_successed
 
     def _set_header(self) -> None:
         self.setHorizontalHeaderLabels(itertools.chain(
-            ('선택',), getattr(self, '_header', tuple()), ('상태',)
+            (self._SELECT_COL_NAME,),
+            getattr(self, '_header', tuple()),
+            ('상태',)
         ))
+
+    def add_data(
+        self, to_display: Iterable[str], infos: Any,
+        items_at_first: Iterable[QStandardItem] = None,
+        items_at_last: Iterable[QStandardItem] = None,
+        *,
+        chk_enabled: bool = True,
+        chk_state: Qt.CheckState = None
+    ) -> None:
+        """
+        Adds given data(texts) (and additional items(optinal)) to model.
+
+        Checkbox will be placed at first column,
+        and Status will be placed at last column.
+
+        Args:
+            to_display (Iterable[str]):
+                The texts to display.
+            items_at_first (Iterable[QStandardItem], optional):
+                If given, given items is inserted before the data.
+            items_at_last (Iterable[QStandardItem], optional):
+                If given, given items is inserted after the data.
+
+        Keyword Args:
+            chk_enabled (bool, optional):
+                Enabled state of checkbox of the row.
+                Defaults to True.
+            chk_state (Qt.CheckState, optional):
+                State of checkbox of the row.
+                If not given, the _DEFAULT_CHECK_STATE of class will be used.
+        """
+        # pylint: disable = arguments-differ
+        status_item = QStandardItem('대기')
+        status_item.setEditable(False)
+        status_iter = (status_item,)
+
+        if items_at_last:
+            items_at_last = itertools.chain(items_at_last, status_iter)
+        else:
+            items_at_last = status_iter
+
+        super().add_data(
+            to_display, infos, items_at_first, items_at_last,
+            chk_enabled=chk_enabled, chk_state=chk_state
+        )
 
     @property
     def info_and_signal_of_checked(
@@ -533,14 +619,12 @@ class WorkModelBase(InfoModelBase):
         bridge = _StatusBridge(self)
         # Loop variables
         checked_row = self.checked_row
-        last_row_index = self.rowCount() - 1
+        last_col = self.columnCount() - 1
 
         for row, info in enumerate(self._infos):
             if row in checked_row:
-                infos.append(info)
-                bridge.register_func(
-                    row, self.item(row, last_row_index).setText
-                )
+                infos.append((row, *info))
+                bridge.register_func(row, self.item(row, last_col).setText)
         return infos, bridge
 
     def set_result(
@@ -565,25 +649,42 @@ class WorkModelBase(InfoModelBase):
         """
         if disable_successed is None:
             disable_successed = self.__disable_successed
-        k = 0
-        last_row_index = self.rowCount() - 1
-        for row in range(len(self.__works)):
+        result_index = 0
+        last_col = self.columnCount() - 1
+        for row in range(len(self._infos)):
             if self.item(row, 0).checkState() == Qt.Checked:
-                successed, text = results[k]
+                successed, text = results[result_index]
                 if successed:
                     self.item(row, 0).setCheckState(Qt.Unchecked)
+                    self.__successed_row.add(row)
                     if disable_successed:
                         self.item(row, 0).setEnabled(False)
-                self.item(row, last_row_index).setText(text)
-                k += 1
+                self.item(row, last_col).setText(text)
+                result_index += 1
+
+    def del_row(self, k: str) -> None:
+        """
+        Remove given row.
+
+        Args:
+            k (int): The row number.
+        """
+        super().del_row(k)
+        self.__successed_row = \
+            {x if x < k else x - 1 for x in self.__successed_row}
 
     def del_successed(self) -> None:
         """Remove successed work(s)."""
-        length = len(self.__works)
-        k = 0
-        while k < length:
-            if self.item(k, 4).text() == '성공':
-                self.del_row(k)
-                length -= 1
+        row_count = len(self._infos)
+        row = 0
+        while row < row_count:
+            if row in self.__successed_row:
+                self.del_row(row)
+                row_count -= 1
             else:
-                k += 1
+                row += 1
+
+    def clear(self) -> None:
+        """Removes all data."""
+        super().clear()
+        self.__successed_row = set()
