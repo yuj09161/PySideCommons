@@ -1,15 +1,7 @@
 from PySide6.QtCore import Signal, QThread
 
-import os
 import asyncio
 from multiprocessing import cpu_count
-
-
-PROGRAM_DIR = os.path.dirname(os.path.abspath(__file__))
-if os.path.isfile(PROGRAM_DIR):
-    while not os.path.isdir(PROGRAM_DIR):
-        PROGRAM_DIR = os.path.dirname(os.path.abspath(PROGRAM_DIR))
-PROGRAM_DIR += os.path.sep
 
 
 class _ThreadRunnerBase(QThread):
@@ -44,6 +36,9 @@ class _ThreadRunnerBase(QThread):
         self._kwargs = kwargs
 
         super().start(priority)
+
+    def run(self) -> None:
+        raise NotImplementedError
 
 
 class ThreadRunner(_ThreadRunnerBase):

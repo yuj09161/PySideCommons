@@ -258,7 +258,7 @@ class CheckModelBase(ModelBase):
     @property
     def chk_enabled_cnt(self) -> int:
         cnt = 0
-        for row in range(self._count):
+        for row in range(self.rowCount()):
             item = self.item(row, 0)
             if item.isEnabled():
                 cnt += 1
@@ -267,7 +267,7 @@ class CheckModelBase(ModelBase):
     @property
     def chk_selected_cnt(self) -> int:
         cnt = 0
-        for row in range(self._count):
+        for row in range(self.rowCount()):
             item = self.item(row, 0)
             if item.isEnabled():
                 cnt += 1
@@ -407,7 +407,6 @@ class InfoModelBase(CheckModelBase):
             default_check_state (Union[bool, Qt.CheckState]):
                 Sets the default check state.
         """
-        self._count = 0
         self._infos = []
         super().__init__(default_check_state)
 
@@ -444,7 +443,6 @@ class InfoModelBase(CheckModelBase):
                 If not given, the _DEFAULT_CHECK_STATE of class will be used.
         """
         # pylint: disable = arguments-differ
-        self._count += 1
         super().add_data(
             to_display, items_at_first, items_at_last,
             chk_enabled=chk_enabled, chk_state=chk_state
@@ -467,11 +465,9 @@ class InfoModelBase(CheckModelBase):
         """
         super().del_row(k)
         del self._infos[k]
-        self._count -= 1
 
     def clear(self) -> None:
         """Removes all data."""
-        self._count = 0
         self._infos = []
         super().clear()
 
@@ -539,6 +535,7 @@ class WorkModelBase(InfoModelBase):
         def del_successed(self) -> None:
             Remove successed work(s).
     """
+    _WAIT_TEXT = '대기'
 
     def __init__(
         self,
@@ -596,7 +593,7 @@ class WorkModelBase(InfoModelBase):
                 If not given, the _DEFAULT_CHECK_STATE of class will be used.
         """
         # pylint: disable = arguments-differ
-        status_item = QStandardItem('대기')
+        status_item = QStandardItem(self._WAIT_TEXT)
         status_item.setEditable(False)
         status_iter = (status_item,)
 
@@ -651,7 +648,7 @@ class WorkModelBase(InfoModelBase):
             disable_successed = self.__disable_successed
         result_index = 0
         last_col = self.columnCount() - 1
-        for row in range(len(self._infos)):
+        for row in range(self.rowCount()):
             if self.item(row, 0).checkState() == Qt.Checked:
                 successed, text = results[result_index]
                 if successed:
@@ -675,7 +672,7 @@ class WorkModelBase(InfoModelBase):
 
     def del_successed(self) -> None:
         """Remove successed work(s)."""
-        row_count = len(self._infos)
+        row_count = self.rowCount()
         row = 0
         while row < row_count:
             if row in self.__successed_row:
