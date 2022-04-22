@@ -552,7 +552,7 @@ class WorkModelBase(InfoModelBase):
         )))
 
     def add_data(
-        self, to_display: Iterable[str], infos: Any,
+        self, to_display: Iterable[str], infos: Iterable[Any],
         items_at_first: Optional[Iterable[QStandardItem]] = None,
         items_at_last: Optional[Iterable[QStandardItem]] = None,
         *,
@@ -571,7 +571,8 @@ class WorkModelBase(InfoModelBase):
             items_at_last: If given, given items is inserted after the data.
 
         Keyword Args:
-            chk_enabled: Enabled state of checkbox of the row. Defaults to True.
+            chk_enabled:
+                Enabled state of checkbox of the row. Defaults to True.
             chk_state:
                 State of checkbox of the row.
                 If not given, the _DEFAULT_CHECK_STATE of class will be used.
