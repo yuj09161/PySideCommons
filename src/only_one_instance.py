@@ -1,3 +1,5 @@
+from PySide6.QtCore import QCoreApplication
+
 import os
 import traceback
 
@@ -7,7 +9,6 @@ from .exception_bridge import ExceptionBridge
 class OnlyOneInstance:
     def __init__(self, lockfile_path: str):
         self.__lockfile_path = lockfile_path
-        self.__failed = False
 
     def __enter__(self):
         try:
@@ -23,6 +24,7 @@ class OnlyOneInstance:
                     'lockfile이 정상적으로 삭제되지 않았을 수 있음\n'
                 ), 1
             )
+            QCoreApplication.exec()
         else:
             self.__lockfile.write(str(os.getpid()))
             self.__lockfile.flush()
