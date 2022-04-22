@@ -15,7 +15,7 @@ class ExceptionBridge(QObject):
     _parent_setted = False
     __warning_sig = Signal(str, str, str)
     __error_sig = Signal(str, str, str)
-    __fatal_sig = Signal(str, str, str)
+    __fatal_sig = Signal(str, str, str, int)
 
     def __new__(cls, parent=None):
         instance = cls._instance
@@ -80,7 +80,9 @@ class ExceptionBridge(QObject):
         """
         self.__error_sig.emit(title, text, detail)
 
-    def fatal(self, title: str, text: str, detail: str = '') -> None:
+    def fatal(
+        self, title: str, text: str, detail: str = '', exitcode: int = 0
+    ) -> None:
         """Show error dialog, and exists program.
 
         Args:
@@ -89,7 +91,7 @@ class ExceptionBridge(QObject):
             detail (str, optional): Detailed information of error dialog.
                 (If not given, 'Show Detail' button will not display.)
         """
-        self.__fatal_sig.emit(title, text, detail)
+        self.__fatal_sig.emit(title, text, detail, exitcode)
 
     def __initalize_messagebox(
         self, icon: QMessageBox.Icon, title: str, text: str, detail: str = ''
@@ -112,13 +114,15 @@ class ExceptionBridge(QObject):
             QMessageBox.Critical, title, text, detail
         ).exec()
 
-    def __show_fatal(self, title: str, text: str, detail: str = '') -> None:
+    def __show_fatal(
+        self, title: str, text: str, detail: str = '', exitcode: int = 0
+    ) -> None:
         msgbox = self.__initalize_messagebox(
             QMessageBox.Critical, title, text, detail
         )
         msgbox.addButton('Exit', QMessageBox.DestructiveRole)
         msgbox.exec()
-        sys.exit()
+        sys.exit(exitcode)
 
     def __print_msg(self, type_: str, text: str, detail: str) -> None:
         print(f"{type_}: {text}\n  {(NL + '  ').join(detail.split(NL))}")
@@ -129,6 +133,8 @@ class ExceptionBridge(QObject):
     def __print_error(self, _: str, text: str, detail: str = '') -> None:
         self.__print_msg('Error', text, detail)
 
-    def __print_fatal(self, _: str, text: str, detail: str = '') -> None:
+    def __print_fatal(
+        self, _: str, text: str, detail: str = '', exitcode: int = 0
+    ) -> None:
         self.__print_msg('Fatal', text, detail)
-        sys.exit()
+        sys.exit(exitcode)
